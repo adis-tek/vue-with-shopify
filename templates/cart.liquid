@@ -1,0 +1,103 @@
+<div id="cart-page" class="cart-page container">
+  <div class="cart-section">
+    
+    <div class="cart-table">
+          <template v-if="cart.items.length > 0">
+            <div class="cart-row" v-for="item in cart.items">
+              <div class="cart-item-title" v-html="item.title"></div>
+              <img :src="item.image">
+              <div>
+                <div class="cart-item-price" v-html="item.formatted_line_price"></div>
+                <label>
+                  Qty
+                  <input type="number" class="cart-item-qty" v-model="item.quantity" @change="update_cart(item.variant_id, item.quantity)">
+                </label>
+              </div>
+              <div class="cart-item-remove" @click="remove_from_cart(item.variant_id)"><img src="{{ 'icon-trash.svg' | asset_url }}"></div>
+            </div>
+            </template>
+            <template v-else>
+              Your cart is currently empty
+            </template>
+      
+    </div>
+
+    <div class="cart-sidebar">
+      <div class="cart-sidebar-top">
+        <h2>Your total</h2>
+        <div class="cart-total" v-html="cart.formatted_total_price"></div>
+      </div>
+      <a href="/checkout" class="checkout-btn">
+        Checkout
+      </a>
+    </div>
+  </div>
+
+  {% if collections['shoes'].products.size > 0 %}
+    <div class="cart-upsells">
+      <h2>You might also like...</h2>
+      
+        <div class="cart-upsells-grid">
+          {% for product in collections['shoes'].products limit:4 %}
+            <div class="cart-upsell-item">
+              <div class="cart-upsell-title">{{ product.title }}</div>
+              <img class="cart-upsell-item-image" src="{{ product.featured_image | img_url: '400x', scale: 2 }}">
+              <a class="cart-upsell-atc-btn">Add to cart</a>
+            </div>
+          {% endfor %}
+        </div>
+    </div>
+  {% endif %}
+  
+</div>
+
+<script>
+  const CartPage = {
+    data() {
+      return {
+        cart: {
+          items: []
+        },
+        upsells: [
+          {% for product in collection['shoes'].products %}
+            {
+              title: "{{ product.title }}",
+              
+            }
+          {% endfor %}
+        ]
+      }
+    },
+    created() {
+      $.get('/cart.js')
+      .then(response => JSON.parse(response))
+      .then(cart => {
+        this.set_cart(cart);
+      })
+    },
+    methods: {
+      set_cart(cart) {
+        this.cart = cart;
+        this.format_prices();
+      },
+      update_cart(id, qty) {
+        $.post('/cart/update.js/', `updates[${id}]=${qty}`)
+        .then(response => JSON.parse(response))
+        .then(cart => {
+          this.set_cart(cart);
+        })
+      },
+      format_prices() {
+        this.cart.items.forEach(item => {
+          item.formatted_line_price = Shopify.formatMoney(item.line_price);
+        });
+        this.cart.formatted_total_price = Shopify.formatMoney(this.cart.total_price);
+      },
+      remove_from_cart(id) {
+        this.update_cart(id, 0);
+      }
+    }
+  }
+
+  Vue.createApp(CartPage).mount('#cart-page');
+</script>

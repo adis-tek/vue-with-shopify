@@ -1,0 +1,3 @@
+Make sure to run theme configure when setting up new themes.
+
+theme configure --password=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 --store=adis-test.myshopify.com --themeid=127820890270
